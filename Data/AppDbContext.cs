@@ -5,10 +5,7 @@ namespace Scanitech_Hjemmeside.Data
 {
     public class AppDbContext : DbContext
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options)
-            : base(options)
-        {
-        }
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         public DbSet<Customer> Customers => Set<Customer>();
 
@@ -16,44 +13,24 @@ namespace Scanitech_Hjemmeside.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Vision 5.0: Fluent API Konfiguration
             modelBuilder.Entity<Customer>(entity =>
             {
-                // Sikrer lynhurtig søgning på email og forhindrer dubletter
                 entity.HasIndex(e => e.Email).IsUnique();
-
-                // Eksempel på default værdier (Postgres kompatibel)
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             });
         }
 
-        // Automatisk opdatering af UpdatedAt ved ændringer
-        public override int SaveChanges()
-        {
-            UpdateTimestamps();
-            return base.SaveChanges();
-        }
-
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            UpdateTimestamps();
-            return base.SaveChangesAsync(cancellationToken);
-        }
-
-        private void UpdateTimestamps()
-        {
-            var entries = ChangeTracker.Entries()
-                .Where(e => e.Entity is Customer && (e.State == EntityState.Added || e.State == EntityState.Modified));
-
-            foreach (var entityEntry in entries)
+            foreach (var entry in ChangeTracker.Entries<Customer>())
             {
-                ((Customer)entityEntry.Entity).UpdatedAt = DateTime.UtcNow;
-
-                if (entityEntry.State == EntityState.Added)
+                if (entry.State == EntityState.Added)
                 {
-                    ((Customer)entityEntry.Entity).CreatedAt = DateTime.UtcNow;
+                    entry.Entity.CreatedAt = DateTime.UtcNow;
                 }
+                entry.Entity.UpdatedAt = DateTime.UtcNow;
             }
+            return base.SaveChangesAsync(cancellationToken);
         }
     }
 }
