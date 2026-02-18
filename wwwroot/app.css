@@ -1,116 +1,32 @@
-html, body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f4f7f9;
-}
-
-/* Scanitech Branding */
 :root {
-    --scanitech-blue: #006bb7;
-    --scanitech-dark: #004a7c;
-    --scanitech-light: #e6f1f8;
-}
-
-.navbar-brand {
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    color: white !important;
+    --scanitech-blue: #004a99;
+    --scanitech-dark: #1a1a1a;
+    --sidebar-width: 280px;
+    --transition-speed: 0.3s;
 }
 
 .sidebar {
-    background-image: linear-gradient(180deg, var(--scanitech-blue) 0%, var(--scanitech-dark) 100%);
+    background-color: var(--scanitech-dark);
+    width: var(--sidebar-width);
+    transition: width var(--transition-speed);
 }
 
 .nav-link {
+    color: #d1d1d1;
     border-radius: 4px;
-    margin: 4px 0;
-    transition: all 0.2s ease;
+    margin: 4px 8px;
 }
-
-    .nav-link:hover {
-        background-color: rgba(255,255,255,0.1);
-    }
 
     .nav-link.active {
-        background-color: rgba(255,255,255,0.2);
-        font-weight: bold;
+        background-color: var(--scanitech-blue);
+        color: white;
     }
 
-/* Content Area */
-.content {
-    padding-top: 2rem;
-}
-
-.btn-primary {
-    background-color: var(--scanitech-blue);
-    border-color: var(--scanitech-dark);
-    padding: 0.6rem 1.2rem;
-    font-weight: 500;
-}
-
-    .btn-primary:hover {
-        background-color: var(--scanitech-dark);
-    }
-
-/* Error UI */
-#blazor-error-ui {
-    background: #ffdbdb;
-    bottom: 0;
-    box-shadow: 0 -1px 5px rgba(0,0,0,0.1);
-    display: none;
-    left: 0;
-    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
-    position: fixed;
-    width: 100%;
-    z-index: 1000;
-}
-/* Hero Sektion Design */
-.hero-wrapper {
-    background: linear-gradient(135deg, #006bb7 0%, #004a7c 100%);
-    border: none;
-}
-
-/* Ikon Cirkel Style */
-.icon-circle {
-    width: 60px;
-    height: 60px;
+.top-row {
+    background-color: #f7f7f7;
+    border-bottom: 1px solid #dee2e6;
+    height: 3.5rem;
     display: flex;
     align-items: center;
-    justify-content: center;
-    border-radius: 50%;
+    justify-content: space-between;
 }
-
-/* Hover effekter på kort */
-.hover-shadow:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
-}
-
-.transition {
-    transition: all 0.3s ease;
-}
-
-/* Gør navigationen mere moderne */
-.sidebar {
-    background-color: #002d4d !important; /* Mørkere blå til sidebar */
-}
-
-.nav-link:hover {
-    background-color: #004a7c !important;
-    color: white !important;
-}
-
-/* Hero-sektion baggrund (diskret gradient) */
-.hero-section {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-bottom: 3px solid #006bb7;
-}
-
-/* Animationer til demo */
-.card, .p-3 {
-    transition: transform 0.2s ease-in-out;
-}
-
-    .card:hover, .p-3:hover {
-        transform: translateY(-5px);
-    }
-

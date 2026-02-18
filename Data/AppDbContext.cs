@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Scanitech_Hjemmeside.Models;
+using Scanitech_Hjemmeside.Scanitech_Logic.Models;
 
 namespace Scanitech_Hjemmeside.Data
 {

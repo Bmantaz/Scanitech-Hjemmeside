@@ -1,70 +1,57 @@
-using Microsoft.EntityFrameworkCore;
-using Scanitech_Hjemmeside.Components;
-using Scanitech_Hjemmeside.Data;
+using Scanitech_DataAccess.Interfaces;
+using Scanitech_DataAccess.Repositories;
+using Scanitech_Hjemmeside.Components; 
+using Scanitech_Hjemmeside.Scanitech_Service.Components;
+using Scanitech_Logic.Configuration;
+using Scanitech_Logic.Security;
+using Scanitech_Logic.Services;
 using Serilog;
 
-namespace Scanitech_Hjemmeside
+var builder = WebApplication.CreateBuilder(args);
+
+// --- 1. LOGGING ---
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateLogger();
+builder.Host.UseSerilog();
+
+try
 {
-    public class Program
+    // --- 2. SIKKERHED & KONFIGURATION ---
+    builder.Services.AddSingleton<IPasswordProtector, PasswordProtector>();
+
+    var dbSection = builder.Configuration.GetSection("DatabaseInfo");
+    builder.Services.AddSingleton<IDatabaseInfo>(sp => new DatabaseInfo
     {
-        public static async Task Main(string[] args)
-        {
-            var builder = WebApplication.CreateBuilder(args);
+        Server = dbSection["Server"] ?? "localhost",
+        Port = dbSection["Port"] ?? "1433",
+        Database = dbSection["Database"] ?? "",
+        User = dbSection["User"] ?? "",
+        Password = sp.GetRequiredService<IPasswordProtector>().Unprotect(dbSection["Password"] ?? "")
+    });
 
-            // 1. Logging Setup (Vision 5.0 Standard)
-            Log.Logger = new LoggerConfiguration()
-                .ReadFrom.Configuration(builder.Configuration)
-                .WriteTo.Console()
-                .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
-                .CreateLogger();
+    // --- 3. DEPENDENCY INJECTION ---
+    builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+    builder.Services.AddScoped<CustomerService>();
+    builder.Services.AddScoped<SupportService>();
 
-            builder.Host.UseSerilog();
+    builder.Services.AddRazorComponents()
+        .AddInteractiveServerComponents();
 
-            // 2. Database Setup (Neon.tech / PostgreSQL)
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+    var app = builder.Build();
 
-            builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseNpgsql(connectionString));
+    // --- 4. PIPELINE ---
+    app.UseStaticFiles();
+    app.UseAntiforgery();
+    app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
-            // 3. Blazor Services
-            builder.Services.AddRazorComponents()
-                .AddInteractiveServerComponents();
-
-            var app = builder.Build();
-
-            // 4. Automatisk Database Opdatering (Migration)
-            if (app.Environment.IsDevelopment())
-            {
-                using var scope = app.Services.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                try
-                {
-                    await db.Database.MigrateAsync();
-                    Log.Information("Database er opdateret og klar.");
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Kunne ikke køre database migration.");
-                }
-            }
-
-            // 5. Middleware Pipeline
-            if (!app.Environment.IsDevelopment())
-            {
-                app.UseExceptionHandler("/Error");
-                app.UseHsts();
-            }
-
-            app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-            app.UseHttpsRedirection();
-            app.UseAntiforgery();
-            app.MapStaticAssets();
-
-            app.MapRazorComponents<App>()
-                .AddInteractiveServerRenderMode();
-
-            await app.RunAsync();
-        }
-    }
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Startup failed");
+}
+finally
+{
+    Log.CloseAndFlush();
 }

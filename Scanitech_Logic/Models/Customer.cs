@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Scanitech_Hjemmeside.Models
+namespace Scanitech_Hjemmeside.Scanitech_Logic.Models
 {
     [Table("Customers")]
     public class Customer
