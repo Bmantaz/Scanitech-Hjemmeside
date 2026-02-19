@@ -1,3 +1,5 @@
 <Solution>
   <Project Path="Scanitech-Hjemmeside.csproj" />
+  <Project Path="Scanitech_DataAccess/Scanitech_DataAccess.csproj" />
+  <Project Path="Scanitech_Logic/Scanitech_Logic.csproj" />
 </Solution>
