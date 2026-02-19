@@ -25,14 +25,17 @@ public sealed class CustomerRepository : ICustomerRepository
     /// <exception cref="ArgumentNullException">Kastes hvis connectionString er tom.</exception>
     public CustomerRepository(string connectionString)
     {
-        // Guard clause for at sikre at vi ikke starter uden en valid forbindelse
+        // Guard clause for at sikre at vi ikke starter uden en valid forbindelse (Vision 5.0)
         if (string.IsNullOrWhiteSpace(connectionString))
-            throw new ArgumentNullException(nameof(connectionString));
+            throw new ArgumentNullException(nameof(connectionString), "Database connection string må ikke være tom.");
 
         _connectionString = connectionString;
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Performance: Vi benytter QuerySingleOrDefaultAsync til specifikke opslag.
+    /// </remarks>
     public async Task<CustomerEntity?> GetByIdAsync(int id, CancellationToken ct)
     {
         await using var connection = new SqlConnection(_connectionString);
@@ -46,6 +49,9 @@ public sealed class CustomerRepository : ICustomerRepository
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Returtype: Vi returnerer IReadOnlyList for at sikre immutabilitet når data forlader DAL.
+    /// </remarks>
     public async Task<IReadOnlyList<CustomerEntity>> GetAllAsync(CancellationToken ct)
     {
         await using var connection = new SqlConnection(_connectionString);
@@ -56,19 +62,20 @@ public sealed class CustomerRepository : ICustomerRepository
 
         var result = await connection.QueryAsync<CustomerEntity>(command);
 
-        // Returnerer som ReadOnlyList for at overholde arkitektur-princippet om immutabilitet ud af DAL
         return result.ToList().AsReadOnly();
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Sikkerhed: Bruger SCOPE_IDENTITY() for at få den korrekte ID i den aktuelle session.
+    /// </remarks>
     public async Task<int> InsertAsync(CustomerEntity entity, CancellationToken ct)
     {
-        // Validering af input før database-interaktion
+        // Validering af input før database-interaktion (Fail fast)
         ArgumentNullException.ThrowIfNull(entity);
 
         await using var connection = new SqlConnection(_connectionString);
 
-        // SCOPE_IDENTITY() er sikrere end @@IDENTITY da den er begrænset til den aktuelle kørsel
         const string sql = @"
             INSERT INTO Customers (Name, Email, CreatedAt) 
             VALUES (@Name, @Email, @CreatedAt);
