@@ -1,8 +1,8 @@
 <Solution>
-  <Project Path="../Scanitech_API/Scanitech_API.csproj" Id="eaafcd52-9529-4e4f-9734-23f1a5cba3c0" />
-  <Project Path="../Scanitech_API_BLL/Scanitech_API_BLL.csproj" Id="b7533405-1f47-4b00-9644-7fe804a411d7" />
-  <Project Path="../Scanitech_API_DAL/Scanitech_API_DAL.csproj" Id="9d099426-0b83-4779-b84a-dd4b90c64431" />
-  <Project Path="../Scanitech_Frontend_BLL/Scanitech_Frontend_BLL.csproj" Id="34670116-fb6c-4997-932d-4aae0ace1b45" />
-  <Project Path="../Scanitech_Frontend_DAL/Scanitech_Frontend_DAL.csproj" Id="3385d6da-59aa-41d6-97fe-804007b1b14c" />
+  <Project Path="Scanitech_API/Scanitech_API.csproj" />
+  <Project Path="Scanitech_API_BLL/Scanitech_API_BLL.csproj" />
+  <Project Path="Scanitech_API_DAL/Scanitech_API_DAL.csproj" />
   <Project Path="Scanitech_Frontend.csproj" />
+  <Project Path="Scanitech_Frontend_BLL/Scanitech_Frontend_BLL.csproj" />
+  <Project Path="Scanitech_Frontend_DAL/Scanitech_Frontend_DAL.csproj" />
 </Solution>

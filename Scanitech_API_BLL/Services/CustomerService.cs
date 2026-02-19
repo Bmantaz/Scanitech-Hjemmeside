@@ -2,7 +2,7 @@
 using Scanitech_API_BLL.Models;
 using Serilog;
 
-namespace Scanitech_API_BLL.Services;
+namespace Scanitech_Frontend_BLL.Services;
 
 /// <summary>
 /// Service til håndtering af forretningslogik vedrørende kunder.

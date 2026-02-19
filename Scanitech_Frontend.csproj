@@ -10,6 +10,29 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="Scanitech_API\**" />
+	  <Compile Remove="Scanitech_API_BLL\**" />
+	  <Compile Remove="Scanitech_API_DAL\**" />
+	  <Compile Remove="Scanitech_Frontend_BLL\**" />
+	  <Compile Remove="Scanitech_Frontend_DAL\**" />
+	  <Content Remove="Scanitech_API\**" />
+	  <Content Remove="Scanitech_API_BLL\**" />
+	  <Content Remove="Scanitech_API_DAL\**" />
+	  <Content Remove="Scanitech_Frontend_BLL\**" />
+	  <Content Remove="Scanitech_Frontend_DAL\**" />
+	  <EmbeddedResource Remove="Scanitech_API\**" />
+	  <EmbeddedResource Remove="Scanitech_API_BLL\**" />
+	  <EmbeddedResource Remove="Scanitech_API_DAL\**" />
+	  <EmbeddedResource Remove="Scanitech_Frontend_BLL\**" />
+	  <EmbeddedResource Remove="Scanitech_Frontend_DAL\**" />
+	  <None Remove="Scanitech_API\**" />
+	  <None Remove="Scanitech_API_BLL\**" />
+	  <None Remove="Scanitech_API_DAL\**" />
+	  <None Remove="Scanitech_Frontend_BLL\**" />
+	  <None Remove="Scanitech_Frontend_DAL\**" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
 			<PrivateAssets>all</PrivateAssets>
@@ -19,6 +42,11 @@
 		<PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
 		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
 		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.3" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="Scanitech_Frontend_BLL\Scanitech_Frontend_BLL.csproj" />
+	  <ProjectReference Include="Scanitech_Frontend_DAL\Scanitech_Frontend_DAL.csproj" />
 	</ItemGroup>
 
 </Project>
