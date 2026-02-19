@@ -1,12 +1,13 @@
 using Scanitech_API_BLL.Services;
 using Scanitech_API_DAL.Interfaces;
 using Scanitech_API_DAL.Repositories;
+using Scanitech_API_DAL.Contexts; // Ny reference til din DbContext
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // --- 1. LOGGING (Vision 5.0 Standard) ---
-// Opsætning af Serilog med daglig rolling file og konsol-output.
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
@@ -18,23 +19,25 @@ builder.Host.UseSerilog();
 
 try
 {
-    Log.Information("Scanitech API v5.0 starter op...");
+    Log.Information("Scanitech API v5.0 (EF Core Edition) starter op...");
 
     // --- 2. DEPENDENCY INJECTION ---
     builder.Services.AddControllers();
-
-    // OpenAPI/Swagger konfiguration
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
 
-    // Hent forbindelsesstreng fra appsettings.json
-    // Designbeslutning: Vi fejler hurtigt hvis forbindelsen mangler.
+    // Hent forbindelsesstreng
     string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
         ?? throw new InvalidOperationException("Kritisk fejl: Forbindelsesstrengen 'DefaultConnection' mangler i appsettings.json.");
 
-    // Registrering af lagene
-    // CustomerRepository kræver forbindelsesstrengen direkte i sin constructor.
-    builder.Services.AddScoped<ICustomerRepository>(sp => new CustomerRepository(connectionString));
+    // --- EF CORE KONFIGURATION ---
+    // Dette er din DbContext som underviseren vil se
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseSqlServer(connectionString));
+
+    // Registrering af repositories og services
+    // Repository kræver nu ikke længere manuel string-injektion, da det bruger AppDbContext
+    builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
     builder.Services.AddScoped<CustomerService>();
 
     var app = builder.Build();
@@ -49,7 +52,7 @@ try
 
     app.UseHttpsRedirection();
 
-    // Global fejlhåndtering (standard i Vision 5.0)
+    // Global fejlhåndtering
     app.UseExceptionHandler(errorApp =>
     {
         errorApp.Run(async context =>
@@ -63,7 +66,7 @@ try
     app.UseAuthorization();
     app.MapControllers();
 
-    Log.Information("Scanitech API v5.0 kører nu.");
+    Log.Information("Scanitech API v5.0 kører nu med EF Core.");
     app.Run();
 }
 catch (Exception ex)
