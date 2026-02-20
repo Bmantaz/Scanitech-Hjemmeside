@@ -1,7 +1,7 @@
 using Scanitech_API_BLL.Services;
 using Scanitech_API_DAL.Interfaces;
 using Scanitech_API_DAL.Repositories;
-using Scanitech_API_DAL.Contexts; // Ny reference til din DbContext
+using Scanitech_API_DAL.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -31,16 +31,35 @@ try
         ?? throw new InvalidOperationException("Kritisk fejl: Forbindelsesstrengen 'DefaultConnection' mangler i appsettings.json.");
 
     // --- EF CORE KONFIGURATION ---
-    // Dette er din DbContext som underviseren vil se
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseSqlServer(connectionString));
 
     // Registrering af repositories og services
-    // Repository kræver nu ikke længere manuel string-injektion, da det bruger AppDbContext
     builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
     builder.Services.AddScoped<CustomerService>();
 
     var app = builder.Build();
+
+    // --- VISION 5.0: AUTOMATISK MIGRATION & SEEDING ---
+    // Dette loop tjekker databasen ved hver opstart. Perfekt til multi-pc udvikling.
+    using (var scope = app.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
+        try
+        {
+            Log.Information("Tjekker og opdaterer LocalDB database...");
+
+            var context = services.GetRequiredService<AppDbContext>();
+            await context.Database.MigrateAsync(); // Asynkron database-opbygning
+
+            Log.Information("Database migration og seeding gennemført med succes!");
+        }
+        catch (Exception ex)
+        {
+            // Vi fanger fejlen kritisk, så vi kan se præcis, hvis LocalDB driller
+            Log.Fatal(ex, "Der opstod en kritisk fejl under automatisk database migration.");
+        }
+    }
 
     // --- 3. PIPELINE KONFIGURATION ---
     if (app.Environment.IsDevelopment())

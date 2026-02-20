@@ -25,7 +25,8 @@ public interface ICustomerRepository
     /// <param name="ct">Token til annullering af igangværende database-kald.</param>
     /// <returns>En read-only liste af alle kunder.</returns>
     /// <remarks>
-    /// Returnerer IReadOnlyList for at indikere over for Logic-laget, at samlingen ikke skal modificeres direkte.
+    /// Returnerer IReadOnlyList for at indikere over for BLL (Business Logic Layer), 
+    /// at samlingen er immuterbar og ikke skal modificeres direkte.
     /// </remarks>
     Task<IReadOnlyList<CustomerEntity>> GetAllAsync(CancellationToken ct);
 

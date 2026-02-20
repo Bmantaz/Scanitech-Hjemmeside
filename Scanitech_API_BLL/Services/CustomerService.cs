@@ -1,16 +1,21 @@
 ﻿using Scanitech_API_DAL.Interfaces;
+using Scanitech_API_DAL.Entities;
 using Scanitech_API_BLL.Models;
 using Serilog;
 
 namespace Scanitech_API_BLL.Services;
+
+// VISION 5.0: DTO (Data Transfer Object) defineret som en 'record'
+// Records er immutable og allokerer minimal hukommelse. Perfekt til at sende data videre.
+public record CustomerDto(int Id, string Name, string Email, DateTime CreatedAt);
 
 /// <summary>
 /// Service til håndtering af forretningslogik vedrørende kunder.
 /// </summary>
 /// <remarks>
 /// Designbeslutning: Denne service fungerer som en orchestrator mellem API-controlleren 
-/// og DataAccess-laget. Den håndterer logning og transformering af data.
-/// SRP: Klassen har kun ansvar for koordinering af kundelogi.
+/// og DataAccess-laget. Den håndterer logning, fejlhåndtering og DTO-mapping.
+/// SRP: Klassen har kun ansvar for koordinering af kundelogik.
 /// </remarks>
 public sealed class CustomerService
 {
@@ -28,43 +33,54 @@ public sealed class CustomerService
     }
 
     /// <summary>
-    /// Henter alle kunder fra databasen og returnerer et samlet resultatobjekt.
+    /// Henter alle kunder fra databasen, mapper dem til DTO'er og returnerer resultatet.
     /// </summary>
     /// <param name="ct">Token til annullering af asynkrone operationer.</param>
-    /// <returns>En <see cref="OperationResult"/> der indeholder status og eventuelle fejlbeskeder.</returns>
-    /// <remarks>
-    /// Fejlhåndtering: Vi fanger exceptions her for at undgå at crashe API'et og returnerer i stedet et OperationResult.
-    /// </remarks>
-    public async Task<OperationResult> GetAllCustomersAsync(CancellationToken ct)
+    /// <returns>En tuple bestående af en <see cref="OperationResult"/> og en skrivebeskyttet liste af <see cref="CustomerDto"/>.</returns>
+    public async Task<(OperationResult Result, IReadOnlyList<CustomerDto> Data)> GetAllCustomersAsync(CancellationToken ct)
     {
         try
         {
             Log.Information("BLL: Starter hentning af alle kunder.");
 
-            var customers = await _customerRepository.GetAllAsync(ct);
+            // 1. Hent rå data (Entities) fra databasen
+            var entities = await _customerRepository.GetAllAsync(ct);
 
-            Log.Information("BLL: Hentede succesfuldt {Count} kunder.", customers.Count);
+            // 2. Map Entities til DTO'er (Vision 5.0 Arkitektur)
+            // WHY: Vi beskytter vores database-skema ved kun at returnere de felter, frontend'en har brug for.
+            var dtos = entities
+                .Select(e => new CustomerDto(e.Id, e.Name, e.Email, e.CreatedAt))
+                .ToList()
+                .AsReadOnly();
 
-            // Returnerer succes-resultat (Vision 5.0 mønster)
-            return new OperationResult(
-                SuccessCount: customers.Count,
-                Errors: Array.Empty<string>(),
-                Warnings: Array.Empty<string>()
+            Log.Information("BLL: Hentede og mappede succesfuldt {Count} kunder.", dtos.Count);
+
+            // 3. Opret succes-resultat (C# 12 syntax med [])
+            var result = new OperationResult(
+                SuccessCount: dtos.Count,
+                Errors: [],
+                Warnings: []
             );
+
+            return (result, dtos);
         }
         catch (OperationCanceledException)
         {
-            Log.Warning("BLL: Hentning af kunder blev annulleret.");
-            throw; // Lad kalderen vide at det blev afbrudt
+            Log.Warning("BLL: Hentning af kunder blev annulleret af klienten.");
+            throw; // Lad frameworket håndtere den afbrudte request
         }
         catch (Exception ex)
         {
             Log.Error(ex, "BLL: Fatal fejl ved hentning af kunder.");
-            return new OperationResult(
+
+            var result = new OperationResult(
                 SuccessCount: 0,
-                Errors: new[] { "Systemet kunne ikke hente kundelisten. Prøv igen senere." },
-                Warnings: Array.Empty<string>()
+                Errors: ["Systemet kunne ikke hente kundelisten. Prøv igen senere."],
+                Warnings: []
             );
+
+            // Returnerer et tomt array sammen med fejlen for at undgå null-reference exceptions i API-laget
+            return (result, []);
         }
     }
 }

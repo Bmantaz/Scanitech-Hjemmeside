@@ -14,7 +14,8 @@ namespace Scanitech_API.Controllers;
 /// </remarks>
 [ApiController]
 [Route("api/v1/[controller]")]
-public class CustomersController : ControllerBase
+[Produces("application/json")] // Vision 5.0: Eksplicit API-kontrakt
+public sealed class CustomersController : ControllerBase // Vision 5.0: Sealed for JIT optimering
 {
     private readonly CustomerService _customerService;
 
@@ -33,24 +34,34 @@ public class CustomersController : ControllerBase
     /// Henter en liste over alle kunder i systemet.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token for at afbryde requestet hvis klienten lukker forbindelsen.</param>
-    /// <returns>Et HTTP resultat der indeholder operationens status og data.</returns>
+    /// <returns>Et HTTP resultat der indeholder operationens status og kundedata.</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(OperationResult), 200)]
-    [ProducesResponseType(500)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         Log.Information("API: Modtog HTTP GET anmodning for at hente alle kunder.");
 
-        var result = await _customerService.GetAllCustomersAsync(cancellationToken);
+        // VISION 5.0: Vi dekonstruerer vores Tuple fra BLL-laget, så vi får BÅDE status og data.
+        var (operationResult, customers) = await _customerService.GetAllCustomersAsync(cancellationToken);
 
-        // Hvis der er fejl (og ingen succesfulde hentninger), returner 500 Internal Server Error.
+        // Hvis der er fejl, returner 500 Internal Server Error.
         // I Vision 5.0 afslører vi ikke interne databasedetaljer til klienten.
-        if (result.SuccessCount == 0 && result.Errors.Any())
+        if (operationResult.SuccessCount == 0 && operationResult.Errors.Count > 0)
         {
             Log.Warning("API: Returnerer 500 Internal Server Error pga. fejl i BLL.");
-            return StatusCode(500, new { Message = "Der opstod en fejl under hentning af data.", Errors = result.Errors });
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                Message = "Der opstod en fejl under hentning af data.",
+                Errors = operationResult.Errors
+            });
         }
 
-        return Ok(result);
+        // Returnerer data til klienten, pakket pænt ind med metadata
+        return Ok(new
+        {
+            Meta = operationResult,
+            Data = customers
+        });
     }
 }
