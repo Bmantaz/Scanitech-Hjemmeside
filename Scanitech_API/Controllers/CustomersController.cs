@@ -62,7 +62,6 @@ public sealed class CustomersController : ControllerBase
 
         var (operationResult, newCustomerId) = await _customerService.CreateCustomerAsync(dto, cancellationToken);
 
-        // Håndter fejl fra servicen (f.eks. manglende input eller databasefejl)
         if (operationResult.SuccessCount == 0)
         {
             if (operationResult.Errors.Any(e => e.Contains("påkrævet")))
@@ -79,11 +78,72 @@ public sealed class CustomersController : ControllerBase
             });
         }
 
-        // Returner 201 Created sammen med det genererede ID
         return Created($"/api/v1/Customers/{newCustomerId}", new
         {
             Meta = operationResult,
             Data = new { Id = newCustomerId, dto.Name, dto.Email }
+        });
+    }
+
+    /// <summary>
+    /// Opdaterer en eksisterende kunde.
+    /// </summary>
+    [HttpPut("{id}")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Update(int id, [FromBody] CustomerUpdateDto dto, CancellationToken cancellationToken)
+    {
+        Log.Information("API: Modtog HTTP PUT anmodning for at opdatere kunde {Id}.", id);
+
+        // Sikkerhed: Vi sikrer at de ikke prøver at rette ID 2, men sender ID 3 i deres JSON
+        if (id != dto.Id)
+        {
+            Log.Warning("API: Returnerer 400 Bad Request. ID i URL matcher ikke ID i body.");
+            return BadRequest(new { Message = "ID i URL matcher ikke ID i data." });
+        }
+
+        var operationResult = await _customerService.UpdateCustomerAsync(dto, cancellationToken);
+
+        if (operationResult.SuccessCount == 0)
+        {
+            // Hvis BLL fortalte os, at kunden ikke findes, returnerer vi korrekt 404
+            if (operationResult.Errors.Any(e => e.Contains("ikke fundet")))
+            {
+                return NotFound(new { Message = "Kunden blev ikke fundet.", Errors = operationResult.Errors });
+            }
+
+            return BadRequest(new { Message = "Kunne ikke opdatere kunden.", Errors = operationResult.Errors });
+        }
+
+        return Ok(new
+        {
+            Meta = operationResult,
+            Message = "Kunden blev opdateret succesfuldt."
+        });
+    }
+
+    /// <summary>
+    /// Sletter en kunde fra systemet.
+    /// </summary>
+    [HttpDelete("{id}")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    {
+        Log.Information("API: Modtog HTTP DELETE anmodning for at slette kunde {Id}.", id);
+
+        var operationResult = await _customerService.DeleteCustomerAsync(id, cancellationToken);
+
+        if (operationResult.SuccessCount == 0)
+        {
+            return BadRequest(new { Message = "Kunne ikke slette kunden.", Errors = operationResult.Errors });
+        }
+
+        return Ok(new
+        {
+            Meta = operationResult,
+            Message = "Kunden blev slettet succesfuldt."
         });
     }
 }

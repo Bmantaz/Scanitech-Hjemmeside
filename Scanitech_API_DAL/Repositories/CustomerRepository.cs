@@ -55,4 +55,25 @@ public sealed class CustomerRepository : ICustomerRepository
         // Efter SaveChangesAsync har EF Core automatisk populært 'Id' feltet fra LocalDB
         return entity.Id;
     }
+
+    /// <inheritdoc/>
+    public async Task UpdateAsync(CustomerEntity entity, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        // Opdaterer entiteten. Fordi vi tager en ny entitet ind fra BLL-laget,
+        // bruger vi Update(), som fortæller EF Core, at alt på denne record er ændret.
+        _context.Customers.Update(entity);
+        await _context.SaveChangesAsync(ct);
+    }
+
+    /// <inheritdoc/>
+    public async Task DeleteAsync(int id, CancellationToken ct)
+    {
+        // WHY: ExecuteDeleteAsync skyder en direkte SQL DELETE kommando afsted.
+        // Vi sparer et databasekald, da vi ikke behøver hente entiteten op i hukommelsen først.
+        await _context.Customers
+            .Where(c => c.Id == id)
+            .ExecuteDeleteAsync(ct);
+    }
 }

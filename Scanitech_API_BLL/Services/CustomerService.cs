@@ -11,6 +11,9 @@ public record CustomerDto(int Id, string Name, string Email, DateTime CreatedAt)
 // DTO til at tage data IND i API'et (Post)
 public record CustomerCreateDto(string Name, string Email);
 
+// DTO til at opdatere en eksisterende kunde (Put)
+public record CustomerUpdateDto(int Id, string Name, string Email);
+
 /// <summary>
 /// Service til håndtering af forretningslogik vedrørende kunder.
 /// </summary>
@@ -77,7 +80,6 @@ public sealed class CustomerService
         {
             Log.Information("BLL: Starter oprettelse af ny kunde: {Name}", dto.Name);
 
-            // 1. Simpel validering (Guard clauses)
             if (string.IsNullOrWhiteSpace(dto.Name) || string.IsNullOrWhiteSpace(dto.Email))
             {
                 Log.Warning("BLL: Validering fejlede ved oprettelse af kunde. Navn og Email manglede.");
@@ -90,20 +92,16 @@ public sealed class CustomerService
                 return (errorResult, null);
             }
 
-            // 2. Map fra DTO til Entity
             var entity = new CustomerEntity
             {
                 Name = dto.Name,
                 Email = dto.Email
-                // CreatedAt sættes automatisk af databasens default value (GETDATE())
             };
 
-            // 3. Gem i databasen
             int newId = await _customerRepository.InsertAsync(entity, ct);
 
             Log.Information("BLL: Kunde oprettet succesfuldt med ID: {Id}", newId);
 
-            // 4. Returner succes
             var successResult = new OperationResult(
                 SuccessCount: 1,
                 Errors: [],
@@ -128,6 +126,85 @@ public sealed class CustomerService
             );
 
             return (result, null);
+        }
+    }
+
+    /// <summary>
+    /// Opdaterer en eksisterende kunde ud fra input DTO'en.
+    /// </summary>
+    public async Task<OperationResult> UpdateCustomerAsync(CustomerUpdateDto dto, CancellationToken ct)
+    {
+        try
+        {
+            Log.Information("BLL: Starter opdatering af kunde med ID: {Id}", dto.Id);
+
+            // 1. Valider input
+            if (dto.Id <= 0 || string.IsNullOrWhiteSpace(dto.Name) || string.IsNullOrWhiteSpace(dto.Email))
+            {
+                Log.Warning("BLL: Validering fejlede ved opdatering af kunde {Id}.", dto.Id);
+                return new OperationResult(0, ["Ugyldigt input. ID, navn og email er påkrævet."], []);
+            }
+
+            // 2. Tjek om kunden findes i forvejen
+            var existingCustomer = await _customerRepository.GetByIdAsync(dto.Id, ct);
+            if (existingCustomer == null)
+            {
+                Log.Warning("BLL: Forsøgte at opdatere en kunde der ikke findes (ID: {Id}).", dto.Id);
+                return new OperationResult(0, ["Kunden blev ikke fundet i databasen."], []);
+            }
+
+            // 3. Opdater entiteten med nye data (CreatedAt bibeholdes da vi kun ændrer Name og Email)
+            existingCustomer.Name = dto.Name;
+            existingCustomer.Email = dto.Email;
+
+            // 4. Gem ændringer via repository
+            await _customerRepository.UpdateAsync(existingCustomer, ct);
+
+            Log.Information("BLL: Kunde {Id} opdateret succesfuldt.", dto.Id);
+            return new OperationResult(1, [], []);
+        }
+        catch (OperationCanceledException)
+        {
+            Log.Warning("BLL: Opdatering af kunde blev annulleret.");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "BLL: Fatal fejl ved opdatering af kunde {Id}.", dto.Id);
+            return new OperationResult(0, ["Der opstod en fejl ved opdatering af kunden."], []);
+        }
+    }
+
+    /// <summary>
+    /// Sletter en kunde ud fra ID.
+    /// </summary>
+    public async Task<OperationResult> DeleteCustomerAsync(int id, CancellationToken ct)
+    {
+        try
+        {
+            Log.Information("BLL: Starter sletning af kunde med ID: {Id}", id);
+
+            if (id <= 0)
+            {
+                Log.Warning("BLL: Validering fejlede ved sletning af kunde. ID var ugyldigt ({Id}).", id);
+                return new OperationResult(0, ["Ugyldigt kunde-ID."], []);
+            }
+
+            // Kalder repository, som skyder en direkte slette-kommando (ExecuteDeleteAsync) afsted
+            await _customerRepository.DeleteAsync(id, ct);
+
+            Log.Information("BLL: Kunde {Id} slettet succesfuldt.", id);
+            return new OperationResult(1, [], []);
+        }
+        catch (OperationCanceledException)
+        {
+            Log.Warning("BLL: Sletning af kunde blev annulleret.");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "BLL: Fatal fejl ved sletning af kunde {Id}.", id);
+            return new OperationResult(0, ["Kunne ikke slette kunden. Prøv igen senere."], []);
         }
     }
 }
