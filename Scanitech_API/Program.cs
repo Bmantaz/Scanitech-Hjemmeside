@@ -24,7 +24,7 @@ try
     // --- 2. DEPENDENCY INJECTION ---
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
+    builder.Services.AddOpenApi();
 
     // Hent forbindelsesstreng
     string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
@@ -64,9 +64,8 @@ try
     // --- 3. PIPELINE KONFIGURATION ---
     if (app.Environment.IsDevelopment())
     {
-        app.UseSwagger();
-        app.UseSwaggerUI();
-        Log.Information("Swagger er tilgængelig i Development mode.");
+        app.MapOpenApi(); // Microsofts native OpenAPI endpoint
+        Log.Information("Microsoft OpenAPI er aktivt i Development mode.");
     }
 
     app.UseHttpsRedirection();

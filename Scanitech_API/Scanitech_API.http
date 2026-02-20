@@ -3,4 +3,11 @@
 GET {{Scanitech_API_HostAddress}}/weatherforecast/
 Accept: application/json
 
-###
+### Opret en ny kunde
+POST {{Scanitech_API_HostAddress}}/api/v1/customers
+Content-Type: application/json
+
+{
+  "name": "Ny Kunde Jensen",
+  "email": "jensen@nykunde.dk"
+}
