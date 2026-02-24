@@ -37,6 +37,18 @@ try
     // Registrering af repositories og services
     builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
     builder.Services.AddScoped<CustomerService>();
+    builder.Services.AddScoped<ChatService>();
+
+    // --- CORS KONFIGURATION (Tillader at vores HTML-frontend kan kalde API'et) ---
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowAll", policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
+    });
 
     var app = builder.Build();
 
@@ -69,6 +81,9 @@ try
     }
 
     app.UseHttpsRedirection();
+
+    // --- AKTIVER CORS I PIPELINEN ---
+    app.UseCors("AllowAll");
 
     // Global fejlhåndtering
     app.UseExceptionHandler(errorApp =>

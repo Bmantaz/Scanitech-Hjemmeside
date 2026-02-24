@@ -37,4 +37,19 @@ public interface ICustomerRepository
     /// <param name="ct">Token til annullering af operationen.</param>
     /// <returns>Det tildelte ID fra databasen.</returns>
     Task<int> InsertAsync(CustomerEntity entity, CancellationToken ct);
+
+
+    /// <summary>
+    /// Opdaterer en eksisterende kunde.
+    /// </summary>
+    /// <param name="entity">Den entitet der skal opdateres.</param>
+    /// <param name="ct">Token til annullering af operationen.</param>
+    Task UpdateAsync(CustomerEntity entity, CancellationToken ct);
+
+    /// <summary>
+    /// Sletter en kunde baseret på ID.
+    /// </summary>
+    /// <param name="id">ID på den kunde der skal slettes.</param>
+    /// <param name="ct">Token til annullering af operationen.</param>
+    Task DeleteAsync(int id, CancellationToken ct);
 }

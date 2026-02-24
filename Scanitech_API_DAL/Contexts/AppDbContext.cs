@@ -11,6 +11,7 @@ public sealed class AppDbContext : DbContext
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
     public DbSet<CustomerEntity> Customers => Set<CustomerEntity>();
+    public DbSet<SupportTicketEntity> SupportTickets { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

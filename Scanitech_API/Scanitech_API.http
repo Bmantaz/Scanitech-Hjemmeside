@@ -11,3 +11,71 @@ Content-Type: application/json
   "name": "Ny Kunde Jensen",
   "email": "jensen@nykunde.dk"
 }
+
+
+### Opdater kunden med ID 3 
+PUT {{Scanitech_API_HostAddress}}/api/v1/customers/3
+Content-Type: application/json
+
+{
+  "id": 3,
+  "name": "Ny Kunde Jensen (Nu opdateret!)",
+  "email": "jensen.opdateret@nykunde.dk"
+}
+
+### Slet kunden med ID 3
+DELETE {{Scanitech_API_HostAddress}}/api/v1/customers/3
+
+
+### Spørg AI'en
+POST {{Scanitech_API_HostAddress}}/api/v1/chat
+Content-Type: application/json
+
+{
+  "message": "Hej! Hvad er din rolle hos Scanitech?"
+}
+
+### Test 1: Den generelle forespørgsel (Mobilordre)
+POST {{Scanitech_API_HostAddress}}/api/v1/chat
+Content-Type: application/json
+
+{
+  "message": "Hej, jeg har et tømrerfirma og mangler hjælp til at holde styr på svendenes timer og materialer. Kan I hjælpe med det?"
+}
+
+### Test 2: Teknisk / Ekstrem support
+POST {{Scanitech_API_HostAddress}}/api/v1/chat
+Content-Type: application/json
+
+{
+  "message": "Vores server brød lige ned, og klokken er 20.00 fredag aften! Hvad gør vi?!"
+}
+
+### Test 3: Forespørgsel på ERP
+POST {{Scanitech_API_HostAddress}}/api/v1/chat
+Content-Type: application/json
+
+{
+  "message": "Vi vil gerne skifte til Uniconta, men vi er bange for, at det koster en formue i ekstra moduler. Hvordan arbejder I med det?"
+}
+
+### Test af Chat Hukommelse (Stateless)
+POST {{Scanitech_API_HostAddress}}/api/v1/chat
+Content-Type: application/json
+
+{
+  "messages": [
+    {
+      "role": "User",
+      "text": "Hej, jeg har et tømrerfirma og mangler overblik."
+    },
+    {
+      "role": "AI",
+      "text": "Hej! Som tømrer vil jeg helt klart anbefale vores system 'Mobilordre'. Det er perfekt til sagsstyring og tidsregistrering."
+    },
+    {
+      "role": "User",
+      "text": "Hvad koster det system, du lige nævnte?"
+    }
+  ]
+}

@@ -7,7 +7,8 @@
 		<RootNamespace>Scanitech_Hjemmeside</RootNamespace>
 		<AssemblyName>$(AssemblyName.Replace(' ', '_'))</AssemblyName>
 		<BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
-	</PropertyGroup>
+	  <UserSecretsId>22d25abc-54d9-497e-976e-5811151a7bc5</UserSecretsId>
+  </PropertyGroup>
 
 	<ItemGroup>
 	  <Compile Remove="Scanitech_API\**" />
