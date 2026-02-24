@@ -20,9 +20,6 @@ public sealed class CustomersController : ControllerBase
         _customerService = customerService ?? throw new ArgumentNullException(nameof(customerService));
     }
 
-    /// <summary>
-    /// Henter en liste over alle kunder i systemet.
-    /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -35,23 +32,12 @@ public sealed class CustomersController : ControllerBase
         if (operationResult.SuccessCount == 0 && operationResult.Errors.Any())
         {
             Log.Warning("API: Returnerer 500 Internal Server Error pga. fejl i BLL.");
-            return StatusCode(StatusCodes.Status500InternalServerError, new
-            {
-                Message = "Der opstod en fejl under hentning af data.",
-                Errors = operationResult.Errors
-            });
+            return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "Der opstod en fejl under hentning af data.", Errors = operationResult.Errors });
         }
 
-        return Ok(new
-        {
-            Meta = operationResult,
-            Data = customers
-        });
+        return Ok(new { Meta = operationResult, Data = customers });
     }
 
-    /// <summary>
-    /// Opretter en ny kunde.
-    /// </summary>
     [HttpPost]
     [ProducesResponseType(typeof(object), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
@@ -66,28 +52,19 @@ public sealed class CustomersController : ControllerBase
         {
             if (operationResult.Errors.Any(e => e.Contains("påkrævet")))
             {
-                Log.Warning("API: Returnerer 400 Bad Request pga. valideringsfejl.");
                 return BadRequest(new { Message = "Ugyldigt input.", Errors = operationResult.Errors });
             }
 
-            Log.Error("API: Returnerer 500 Internal Server Error pga. fejl i BLL.");
-            return StatusCode(StatusCodes.Status500InternalServerError, new
-            {
-                Message = "Der opstod en fejl under oprettelse af kunden.",
-                Errors = operationResult.Errors
-            });
+            return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "Der opstod en fejl under oprettelse af kunden.", Errors = operationResult.Errors });
         }
 
         return Created($"/api/v1/Customers/{newCustomerId}", new
         {
             Meta = operationResult,
-            Data = new { Id = newCustomerId, dto.Name, dto.Email }
+            Data = new { Id = newCustomerId, dto.Name, dto.Email, Message = "Konto oprettet. Afventer godkendelse før adgang til support." }
         });
     }
 
-    /// <summary>
-    /// Opdaterer en eksisterende kunde.
-    /// </summary>
     [HttpPut("{id}")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
@@ -96,36 +73,42 @@ public sealed class CustomersController : ControllerBase
     {
         Log.Information("API: Modtog HTTP PUT anmodning for at opdatere kunde {Id}.", id);
 
-        // Sikkerhed: Vi sikrer at de ikke prøver at rette ID 2, men sender ID 3 i deres JSON
-        if (id != dto.Id)
-        {
-            Log.Warning("API: Returnerer 400 Bad Request. ID i URL matcher ikke ID i body.");
-            return BadRequest(new { Message = "ID i URL matcher ikke ID i data." });
-        }
+        if (id != dto.Id) return BadRequest(new { Message = "ID i URL matcher ikke ID i data." });
 
         var operationResult = await _customerService.UpdateCustomerAsync(dto, cancellationToken);
 
         if (operationResult.SuccessCount == 0)
         {
-            // Hvis BLL fortalte os, at kunden ikke findes, returnerer vi korrekt 404
             if (operationResult.Errors.Any(e => e.Contains("ikke fundet")))
             {
                 return NotFound(new { Message = "Kunden blev ikke fundet.", Errors = operationResult.Errors });
             }
-
             return BadRequest(new { Message = "Kunne ikke opdatere kunden.", Errors = operationResult.Errors });
         }
 
-        return Ok(new
-        {
-            Meta = operationResult,
-            Message = "Kunden blev opdateret succesfuldt."
-        });
+        return Ok(new { Meta = operationResult, Message = "Kunden blev opdateret succesfuldt." });
     }
 
     /// <summary>
-    /// Sletter en kunde fra systemet.
+    /// Godkender en kunde (Admin-funktionalitet)
     /// </summary>
+    [HttpPatch("{id}/approve")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ApproveCustomer(int id, CancellationToken cancellationToken)
+    {
+        Log.Information("API: Modtog HTTP PATCH anmodning for at godkende kunde {Id}.", id);
+
+        var operationResult = await _customerService.ApproveCustomerAsync(id, cancellationToken);
+
+        if (operationResult.SuccessCount == 0)
+        {
+            return NotFound(new { Message = "Kunden blev ikke fundet eller kunne ikke godkendes.", Errors = operationResult.Errors });
+        }
+
+        return Ok(new { Meta = operationResult, Message = "Kunden er nu godkendt og kan oprette tickets." });
+    }
+
     [HttpDelete("{id}")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
@@ -135,15 +118,8 @@ public sealed class CustomersController : ControllerBase
 
         var operationResult = await _customerService.DeleteCustomerAsync(id, cancellationToken);
 
-        if (operationResult.SuccessCount == 0)
-        {
-            return BadRequest(new { Message = "Kunne ikke slette kunden.", Errors = operationResult.Errors });
-        }
+        if (operationResult.SuccessCount == 0) return BadRequest(new { Message = "Kunne ikke slette kunden.", Errors = operationResult.Errors });
 
-        return Ok(new
-        {
-            Meta = operationResult,
-            Message = "Kunden blev slettet succesfuldt."
-        });
+        return Ok(new { Meta = operationResult, Message = "Kunden blev slettet succesfuldt." });
     }
 }

@@ -1,30 +1,111 @@
 ﻿@page "/support"
+@* Antager at du har en form for AuthenticationStateProvider eller lign. til at hente CustomerId *@
+@inject NavigationManager NavManager
+@* @inject IApiService ApiService (Din frontend service til at kalde backend) *@
 
-<PageTitle>Support | Scanitech</PageTitle>
+<div class="container mt-5">
+    <h2>Opret Support Sag</h2>
+    <p class="text-muted">Beskriv dit problem detaljeret, så vores teknikere kan hjælpe dig bedst muligt.</p>
 
-<div class="container py-5 text-center">
-    <div class="icon-circle bg-primary text-white mx-auto mb-4" style="width: 80px; height: 80px;">
-        <i class="bi bi-headset fs-1"></i>
-    </div>
-    <h1 class="display-5 fw-bold">Teknisk Support</h1>
-    <p class="col-md-8 mx-auto lead text-muted mb-5">
-        Vores eksperter sidder klar til at hjælpe dig med tekniske udfordringer og vejledning.
-    </p>
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="alert alert-danger">@ErrorMessage</div>
+    }
 
-    <div class="row justify-content-center g-4">
-        <div class="col-md-4">
-            <div class="p-4 bg-light rounded-3 shadow-sm">
-                <h4 class="fw-bold">Hurtig Hjælp</h4>
-                <p>Ring direkte til vores vagttelefon for akutte problemer.</p>
-                <a href="tel:+4512345678" class="btn btn-primary w-100">+45 12 34 56 78</a>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">Titel på problemet</label>
+                <input type="text" class="form-control" @bind="TicketModel.Title" placeholder="F.eks. Netværksudfald på kontoret" />
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="p-4 bg-light rounded-3 shadow-sm">
-                <h4 class="fw-bold">Fjernsupport</h4>
-                <p>Vi kan logge på jeres systemer og løse fejlen med det samme.</p>
-                <button class="btn btn-outline-primary w-100">Start Fjernstyring</button>
+            <div class="mb-3">
+                <label class="form-label">Beskrivelse</label>
+                <textarea class="form-control" rows="5" @bind="TicketModel.Description" placeholder="Beskriv fejlen, og hvornår den opstod..."></textarea>
             </div>
+
+            @* Knappen der åbner modalen frem for at submitte direkte *@
+            <button class="btn btn-primary" @onclick="ShowConsentModal">Næste: Betingelser</button>
         </div>
     </div>
 </div>
+
+@* --- SAMTYKKE MODAL (POPUP) --- *@
+@if (IsModalVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title">Faktureringsbetingelser</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <strong>Vigtig information:</strong>
+                        <p class="mb-0 mt-2">Support afregnes til <strong>950,- DKK ekskl. moms</strong> pr. time.</p>
+                        <p class="mb-0">Fakturering sker pr. påbegyndt kvarter (15 minutter).</p>
+                    </div>
+
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" id="consentCheck" @bind="TicketModel.HasConsented">
+                        <label class="form-check-label" for="consentCheck">
+                            Jeg har læst og accepterer betingelserne for fakturering, og er bemyndiget til at bestille support på vegne af min virksomhed.
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseModal">Fortryd</button>
+                    <button type="button" class="btn btn-success" disabled="@(!TicketModel.HasConsented)" @onclick="SubmitTicket">Opret Sag Nu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool IsModalVisible { get; set; } = false;
+    private string ErrorMessage { get; set; } = string.Empty;
+
+    // Simpel lokal model til at holde form data
+    private SupportFormModel TicketModel { get; set; } = new();
+
+    private void ShowConsentModal()
+    {
+        ErrorMessage = string.Empty;
+        if (string.IsNullOrWhiteSpace(TicketModel.Title) || string.IsNullOrWhiteSpace(TicketModel.Description))
+        {
+            ErrorMessage = "Udfyld venligst både titel og beskrivelse, før du fortsætter.";
+            return;
+        }
+        IsModalVisible = true;
+    }
+
+    private void CloseModal()
+    {
+        IsModalVisible = false;
+        TicketModel.HasConsented = false; // Nulstil samtykke hvis de afbryder
+    }
+
+    private async Task SubmitTicket()
+    {
+        if (!TicketModel.HasConsented) return;
+
+        // Her integrerer du dit API kald til backend (f.eks. med HttpClient)
+        // var response = await ApiService.PostAsync("api/v1/tickets", new { CustomerId = 1, ... });
+
+        // Simulerer API kald success
+        Console.WriteLine("Ticket sendt til API!");
+
+        IsModalVisible = false;
+
+        // Redirect til en "Tak" side eller ryd formen
+        NavManager.NavigateTo("/support/success");
+    }
+
+    private class SupportFormModel
+    {
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public bool HasConsented { get; set; } = false;
+    }
+}
