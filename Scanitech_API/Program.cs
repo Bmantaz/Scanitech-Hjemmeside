@@ -36,7 +36,9 @@ try
 
     // Registrering af repositories og services
     builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+    builder.Services.AddScoped<ISupportTicketRepository, SupportTicketRepository>(); // <-- TILFØJ DENNE
     builder.Services.AddScoped<CustomerService>();
+    builder.Services.AddScoped<TicketService>();
     builder.Services.AddScoped<ChatService>();
 
     // --- CORS KONFIGURATION (Tillader at vores HTML-frontend kan kalde API'et) ---
